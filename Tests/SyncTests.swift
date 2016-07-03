@@ -774,6 +774,35 @@ class SyncTests: XCTestCase {
 
     try! dataStack.drop()
   }
+  
+  // MARK: - Issue 237 => https://github.com/hyperoslo/Sync/issues/237
+  
+  func testIssue237() {
+    let dataStack = Helper.dataStackWithModelName("237-nested-relations")
+    
+    //
+    let json = Helper.objectsFromJSON("237-nested-relations.json") as! [String : AnyObject]
+    Sync.changes([ json ], inEntityNamed: "Group", dataStack: dataStack, completion: nil)
+    XCTAssertEqual(Helper.countForEntity("Group", inContext:dataStack.mainContext), 1)
+    XCTAssertEqual(Helper.countForEntity("Membership", inContext:dataStack.mainContext), 1)
+    XCTAssertEqual(Helper.countForEntity("Team", inContext:dataStack.mainContext), 1)
+    
+    let groups = Helper.fetchEntity("Group", inContext: dataStack.mainContext)
+    let group = groups.first
+    
+    XCTAssertNotNil(group?.valueForKey("memberships"))
+    XCTAssertNotNil(group?.valueForKey("teams"))
+    XCTAssertEqual(group?.valueForKey("memberships")!.count, 1)
+    XCTAssertEqual(group?.valueForKey("teams")!.count, 1)
+    
+    let memberships = Helper.fetchEntity("Membership", inContext: dataStack.mainContext)
+    let member = memberships.first
+    
+    XCTAssertNotNil(member?.valueForKey("group"))
+    XCTAssertNotNil(member?.valueForKey("team"))
+    
+    try! dataStack.drop()
+  }
 
   // MARK: - Add support for cancellable sync processes https://github.com/hyperoslo/Sync/pull/216
 
